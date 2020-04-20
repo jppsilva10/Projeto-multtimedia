@@ -8,18 +8,20 @@
 
 function main()
 {
+	var pause = document.getElementsByTagName("iframe")[0]; 
+	pause.style.height = 0;
 	var canvas = document.getElementById("canvas");
 	var ctx = canvas.getContext("2d");
-	var spArray;  //sprite array
+	var spArray;
 	ctx.pause = false;
+	var repeat = false;
 
 	canvas.addEventListener("initend", initEndHandler);
 	init(ctx);  //carregar todos os componentes
 
-	//funções locais para gestão de eventos
+	//controlar a movimentação da nave
 	function initEndHandler(ev)
 	{
-		//instalar listeners do rato	
 		spArray = ev.spArray;
 		function move(ev){
 			switch(ev.keyCode){
@@ -41,6 +43,23 @@ function main()
 				case 39:
 					spArray[0].Rright=true;
 					break;
+				case 80: // menu de pausa
+					if(ctx.pause){
+						if(!repeat){
+							ctx.pause= false;
+							pause.style.height = 0;
+							startAnim(ctx, spArray);
+							repeat= true; // evitar repetições por tecla precionada
+						}
+					} 
+					else{
+						if(!repeat){
+							pause.style.height = "100%";
+							ctx.pause=true;
+							repeat= true; // evitar repetições por tecla precionada
+						}
+					}
+				break;
 			}
 		}
 		function stop(ev){
@@ -64,17 +83,12 @@ function main()
 					spArray[0].Rright=false;
 					break;
 				case 80:
-					if(ctx.pause){
-						ctx.pause= false;
-						startAnim(ctx, spArray);
-					} 
-					else
-						ctx.pause=true;
+					repeat = false;
 					break;
 			}
 		}
-		window.addEventListener("keydown", move, false);
-		window.addEventListener("keyup", stop, false);
+		window.addEventListener("keydown", move);
+		window.addEventListener("keyup", stop);
 
 		//iniciar a animação
 		startAnim(ctx, spArray);
@@ -95,29 +109,32 @@ function init(ctx)
 	img1.addEventListener("load", imgLoadedHandler);
 	img1.border=0;
 	img1.id="nave";
-	img1.src = "resources/nave.png";  //dá ordem de carregamento da imagem
+	img1.src = "resources/nave.png";
+
 	ctx.canvas.addEventListener("loadEnimies", loadEnimies);
 	ctx.canvas.addEventListener("loadLife", loadLife);
+
 	function loadEnimies(ev){
-		var arma = Image();
+		var arma = new Image();
 		arma.addEventListener("load", imgLoadedHandler);
 		arma.id="arma";
 		arma.src = "resources/arma1.png";
-		var enimigos = Image();
+		var enimigos = new Image();
 		enimigos.addEventListener("load", imgLoadedHandler);
 		enimigos.id="inimigo";
 		enimigos.src = "resources/inimigo.png";
 	}
+
 	function loadLife(ev){
-		var bullet = Image();
+		var bullet = new Image();
 		bullet.addEventListener("load", imgLoadedHandler);
 		bullet.id="bullet";
 		bullet.src = "resources/tiro1.png";
-		var life = Image();
+		var life = new Image();
 		life.addEventListener("load", imgLoadedHandler);
 		life.id="life";
 		life.src = "resources/life.png";
-		var lifeBar = Image();
+		var lifeBar = new Image();
 		lifeBar.addEventListener("load", imgLoadedHandler);
 		lifeBar.id="lifeBar";
 		lifeBar.src = "resources/lifeBar.png";
@@ -129,6 +146,8 @@ function init(ctx)
 		img.border=0;
 		var nw = img.naturalWidth;
 		var nh = img.naturalHeight;
+
+		// criar ctx para o getImageData
 		var canvas = document.createElement('canvas');
 		canvas.width = Math.round(nw/4);
 		canvas.height = Math.round(nh/4);
@@ -136,7 +155,7 @@ function init(ctx)
 
 		switch(img.id){
 			case "nave":
-				var sp = new Nave(img, Math.round(nw/4), Math.round(nh/4), Math.round(ctx.canvas.width/2), Math.round(ctx.canvas.height/2), 0, context, 100, 5);
+				var sp = new Nave(img, Math.round(nw/4), Math.round(nh/4), Math.round(ctx.canvas.width/2), Math.round(ctx.canvas.height/2), 0, context, 100, 3);
 				spArray[0] = sp;
 				var ev2 = new Event("loadEnimies");
 				ev2.spArray = spArray;
@@ -146,6 +165,7 @@ function init(ctx)
 			case "inimigo":
 				for(; nLoad<totLoad; nLoad++){
 					var sp = new Inimigo(img, Math.round(nw/4), Math.round(nh/4), 0, 0, 0, context, 100, nLoad, spArray[0], 10);
+					sp.imageData=sp.getImageData();
 					spArray[nLoad] = sp;
 				}
 				nLoad-=3;
@@ -155,6 +175,7 @@ function init(ctx)
 			case "arma":
 				var sp = new Arma(img, Math.round(nw/2), Math.round(nh/2),spArray[0].width/2 - Math.round(nw/2)/2, Math.round(nw/2)/2, 0);
 				spArray[0].addWeapon(sp);
+				spArray[0].imageData = spArray[0].getImageData();
 				break;
 			case "life":
 				var dim = spArray.length;
@@ -222,10 +243,7 @@ function clear(ctx, spArray)
 }
 
 
-//-------------------------------------------------------------
-//--- controlo da animação: coração da aplicação!!!
-//-------------------------------------------------------------
-var auxDebug = 0;  //eliminar
+
 function animLoop(ctx, spArray, startTime, time)
 {	
 	var al = function(time)
@@ -239,7 +257,7 @@ function animLoop(ctx, spArray, startTime, time)
 	render(ctx, spArray, reqID, time - startTime);
 }
 
-//resedenho, actualizações, ...
+
 function render(ctx, spArray, reqID, dt)
 {
 	var cw = ctx.canvas.width;
@@ -271,8 +289,3 @@ function render(ctx, spArray, reqID, dt)
 	if(ctx.pause)
 		window.cancelAnimationFrame(reqID);
 }
-
-
-//-------------------------------------------------------------
-//--- interacção com o rato
-//-------------------------------------------------------------

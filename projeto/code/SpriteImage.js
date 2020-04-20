@@ -12,7 +12,7 @@ class SpriteImage
 		this.yc = y + Math.round(this.height / 2);
 		this.direction = direction;
 		this.ctx = ctx;
-		this.imageData = this.getImageData;
+		//this.imageData = this.getImageData();
 		this.impact = -1;
 		this.impactDirection=0;
 	}
@@ -37,7 +37,6 @@ class SpriteImage
         ctx.translate(-this.width / 2, -this.height / 2);
         ctx.drawImage(this.img, 0, 0, this.width, this.height);
         ctx.restore();
-        this.imageData = this.getImageData();
 	}
 	drawLife(ctx){
 	}
@@ -246,7 +245,6 @@ class Nave extends Entidade
         }
         ctx.restore();
         this.drawlife(ctx);
-        this.imageData = this.getImageData();
 	}
 	getImageData(){
 		this.ctx.clearRect(0, 0, this.width, this.height);
@@ -257,7 +255,7 @@ class Nave extends Entidade
         this.ctx.drawImage(this.img, 0, 0, this.width, this.height);
         for(let i=0; i<this.weapons.length; i++){
         	this.ctx.translate(this.width / 2,this.height / 2);
-        	this.ctx.rotate(this.weapons[i].direction);
+        	this.ctx.rotate(this.weapons[i].direction-this.direction);
         	this.ctx.translate(-this.width / 2, -this.height / 2);
         	this.ctx.drawImage(this.weapons[i].img, this.width/2-this.weapons[i].width/2, 0, this.weapons[i].width, this.weapons[i].height);
         }
@@ -278,6 +276,7 @@ class Arma extends SpriteImage
 	draw(ctx){
 	}
 	getImageData(){
+		return null;
 	}
 }
 
@@ -295,7 +294,6 @@ class Bullet extends SpriteImage
 		//this.imageData = this.getImageData();
 	}
 	move(cw, ch){
-		console.log("a");
 		this.x = this.x + (Math.cos(this.direction- Math.PI / 2) * this.speed);
 		this.y = this.y + (Math.sin(this.direction-  Math.PI / 2) * this.speed);
 		this.distance-=this.speed;
@@ -308,7 +306,6 @@ class Bullet extends SpriteImage
 		}
 	}
 	draw(ctx){
-		console.log("b");
 		ctx.save();
 		//if(this.impact>0){
 			//ctx.globalAlpha = (121-3*this.impact/4)/121;
@@ -369,7 +366,6 @@ class Inimigo extends Entidade
         ctx.drawImage(this.img, 0, 0, this.width, this.height);
         ctx.restore();
         this.drawlife(ctx);
-        this.imageData = this.getImageData(this.img);
 	}
 	getImageData(){
 		this.ctx.clearRect(0, 0, this.width, this.height);
@@ -383,141 +379,3 @@ class Inimigo extends Entidade
 	}
 
 }
-
-/*
-class SpriteImage
-{
-	constructor(x, y, w, h, speed, img, direcao)
-	{
-		this.cima= false;
-		this.baixo= false;
-		this.esquerda= false;
-		this.direita= false;
-		this.Resquerda= false;
-		this.Rdireita= false;
-		this.x = x;
-		this.y = y;
-		this.width = w;
-		this.height = h;
-		this.xc = x + Math.round(w/2);
-		this.yc = y + Math.round(h/2);
-		this.speed = speed;
-		this.img = img;
-		this.direcao = direcao;
-		this.imageData = this.getImageData(img);				
-	}
-
-
-	draw(ctx)
-	{
-		this.xc=this.x + this.width / 2;
-		this.yc=this.y + this.height / 2;
-		ctx.save();
-		ctx.translate(this.x+this.width / 2, this.y+this.height / 2);
-        ctx.rotate(this.direcao * Math.PI / 180);
-        ctx.translate(-this.width / 2, -this.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-        this.imageData = this.getImageData(this.img);
-	}   
-
-
-	clear(ctx)
-	{
-		ctx.clearRect(this.x, this.y, this.width, this.height);
-	}
-
-	getImageData(img){
-		var canvas = document.createElement('canvas');
-		canvas.width = this.width
-		canvas.height = this.height;
-
-		var ctx = canvas.getContext("2d");
-		ctx.save();
-		ctx.translate(canvas.width / 2, + canvas.height/ 2);
-        ctx.rotate(this.direcao * Math.PI / 180);
-        ctx.translate(-canvas.width / 2, -canvas.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-		return ctx.getImageData(0, 0, canvas.width, canvas.height);
-	}
-
-	static intersectsBoundingBox(sp1, sp2){
-		if(sp1.x > sp2.x+ sp2.cw || sp2.x > sp1.x+ sp1.cw)
-			return false;
-		if(sp1.y > sp2.y+ sp2.ch || sp2.y > sp1.y+ sp1.ch)
-			return false;
-		return true;
-	}
-
-	intersectsPixelCheck(sp2){
-		if(SpriteImage.intersectsBoundingBox(this, sp2)){
-			var xMin = Math.max(this.x, sp2.x);
-			var xMax = Math.min(this.x + this.width, sp2.x + sp2.width);
-			var yMin = Math.max(this.y, sp2.y);
-			var yMax = Math.min(this.y + this.height, sp2.y + sp2.height);
-
-			for(let x = xMin; x <= xMax; x++){
-				for(let y = yMin; y <= yMax; y++){
-					// sprite 1
-					var xLocal = Math.round(x - this.x);
-					var yLocal = Math.round(y - this.y);
-					var pixelIndex1 = yLocal * this.width + xLocal;
-					pixelIndex1 = pixelIndex1 * 4 + 3;
-					// sprite 2
-					xLocal = Math.round(x - sp2.x);
-					yLocal = Math.round(y - sp2.y);
-					var pixelIndex2 = yLocal * sp2.width + xLocal;
-					pixelIndex2 = pixelIndex2 * 4 + 3;
-
-					if(this.imageData.data[pixelIndex1] && sp2.imageData.data[pixelIndex2]){
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-		else{
-			return false;
-		}
-	}
-}
-
-class Inimigo extends SpriteImage
-{
-	constructor(x, y, w, h, speed, img, direcao, alvo){
-		super(x, y, w, h, speed, img, direcao)
-		this.alvo = alvo;
-	}
-	draw(ctx)
-	{
-		this.xc=this.x + this.width / 2;
-		this.yc=this.y + this.height / 2;
-		this.direcao = Math.atan2(this.alvo.yc-this.yc, this.alvo.xc-this.xc);
-		this.x = this.x +  (Math.cos(this.direcao)*this.speed);
-		this.y = this.y + (Math.sin(this.direcao)*this.speed);
-		
-		ctx.save();
-		ctx.translate(this.x+this.width / 2, this.y+this.height / 2);
-        ctx.rotate(this.direcao + Math.PI/2);
-        ctx.translate(-this.width / 2, -this.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-        this.imageData = this.getImageData(this.img);
-	}
-	getImageData(img){
-		var canvas = document.createElement('canvas');
-		canvas.width = this.width
-		canvas.height = this.height;
-
-		var ctx = canvas.getContext("2d");
-		ctx.save();
-		ctx.translate(canvas.width / 2, canvas.height/ 2);
-        ctx.rotate(this.direcao + Math.PI/2);
-        ctx.translate(-canvas.width / 2, -canvas.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-		return ctx.getImageData(0, 0, canvas.width, canvas.height);
-	}
-}
-*/
