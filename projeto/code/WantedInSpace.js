@@ -41,10 +41,12 @@ function main()
 		var ev4 = new Event("start");
 		ctx.canvas.dispatchEvent(ev4);
 	}
+
 	function anim(ev){
 		nave.draw(ctx);
 		animLoop(ctx, nave, 0);
 	}
+	
 	var startPage = "../projeto/html/MenuInicial.html";
 	hidePage();
 	showPage(startPage);

@@ -8,42 +8,60 @@
 
 function main()
 {
+	// retomar o foco dos eventos à janela do jogo
+	function messageHandler(ev){
+		if(ev.data=="continue"){
+			ctx.pause= false;
+			pause.style.height = 0;
+			startAnim(ctx, spArray);
+			repeat= true; 
+			window.focus()
+		}
+	}
+
+	// fornecer a sorce da main
+	window.addEventListener("message", messageHandler);
 	var pause = document.getElementsByTagName("iframe")[0]; 
+	pause.contentWindow.postMessage('hello frame', '*');
 	pause.style.height = 0;
+
 	var canvas = document.getElementById("canvas");
 	var ctx = canvas.getContext("2d");
+	canvas.addEventListener("initend", initEndHandler);
+
 	var spArray;
+	var imgArray;
 	ctx.pause = false;
 	var repeat = false;
-
-	canvas.addEventListener("initend", initEndHandler);
+	
 	init(ctx);  //carregar todos os componentes
 
 	//controlar a movimentação da nave
 	function initEndHandler(ev)
 	{
 		spArray = ev.spArray;
+		var sp = spArray.sp;
 		function move(ev){
 			switch(ev.keyCode){
 				case 87:
-					spArray[0].up=true;
+					sp.up=true;
 					break;
 				case 65:
-					spArray[0].left=true;
+					sp.left=true;
 					break;
 				case 83:
-					spArray[0].down=true;
+					sp.down=true;
 					break;
 				case 68:
-					spArray[0].right=true;
+					sp.right=true;
 					break;
 				case 37:
-					spArray[0].Rleft=true;
+					sp.Rleft=true;
 					break;
 				case 39:
-					spArray[0].Rright=true;
+					sp.Rright=true;
 					break;
-				case 80: // menu de pausa
+				case 27: // menu de pausa
 					if(ctx.pause){
 						if(!repeat){
 							ctx.pause= false;
@@ -62,27 +80,28 @@ function main()
 				break;
 			}
 		}
+
 		function stop(ev){
 			switch(ev.keyCode){
 				case 87:
-					spArray[0].up=false;
+					sp.up=false;
 					break;
 				case 65:
-					spArray[0].left=false;
+					sp.left=false;
 					break;
 				case 83:
-					spArray[0].down=false;
+					sp.down=false;
 					break;
 				case 68:
-					spArray[0].right=false;
+					sp.right=false;
 					break;
 				case 37:
-					spArray[0].Rleft=false;
+					sp.Rleft=false;
 					break;
 				case 39:
-					spArray[0].Rright=false;
+					sp.Rright=false;
 					break;
-				case 80:
+				case 27:
 					repeat = false;
 					break;
 			}
@@ -101,7 +120,7 @@ function init(ctx)
 {
 	var nLoad = 0;
 	var totLoad = 3;
-	var spArray = new Array(totLoad+1);
+	var spArray = new ArrayList();
 
 	//carregar imagens e criar sprites
 	var img1 = new Image();
@@ -115,10 +134,12 @@ function init(ctx)
 	ctx.canvas.addEventListener("loadLife", loadLife);
 
 	function loadEnimies(ev){
+
 		var arma = new Image();
 		arma.addEventListener("load", imgLoadedHandler);
 		arma.id="arma";
 		arma.src = "resources/arma1.png";
+
 		var enimigos = new Image();
 		enimigos.addEventListener("load", imgLoadedHandler);
 		enimigos.id="inimigo";
@@ -126,14 +147,17 @@ function init(ctx)
 	}
 
 	function loadLife(ev){
+
 		var bullet = new Image();
 		bullet.addEventListener("load", imgLoadedHandler);
 		bullet.id="bullet";
 		bullet.src = "resources/tiro1.png";
+
 		var life = new Image();
 		life.addEventListener("load", imgLoadedHandler);
 		life.id="life";
 		life.src = "resources/life.png";
+
 		var lifeBar = new Image();
 		lifeBar.addEventListener("load", imgLoadedHandler);
 		lifeBar.id="lifeBar";
@@ -156,56 +180,58 @@ function init(ctx)
 		switch(img.id){
 			case "nave":
 				var sp = new Nave(img, Math.round(nw/4), Math.round(nh/4), Math.round(ctx.canvas.width/2), Math.round(ctx.canvas.height/2), 0, context, 100, 3);
-				spArray[0] = sp;
-				var ev2 = new Event("loadEnimies");
-				ev2.spArray = spArray;
-				ctx.canvas.dispatchEvent(ev2);
+				spArray.sp = sp;
+				var ev = new Event("loadEnimies");
+				ctx.canvas.dispatchEvent(ev);
 				nLoad++;
 				break;
 			case "inimigo":
 				for(; nLoad<totLoad; nLoad++){
-					var sp = new Inimigo(img, Math.round(nw/4), Math.round(nh/4), 0, 0, 0, context, 100, nLoad, spArray[0], 10);
+					var sp = new Inimigo(img, Math.round(nw/4), Math.round(nh/4), 0, 0, context, 100, nLoad, spArray.sp, 10);
 					sp.imageData=sp.getImageData();
-					spArray[nLoad] = sp;
+					spArray.add(sp);
 				}
 				nLoad-=3;
-				var ev4 = new Event("loadLife");
-				ctx.canvas.dispatchEvent(ev4);
+				var ev = new Event("loadLife");
+				ctx.canvas.dispatchEvent(ev);
 				break;
 			case "arma":
-				var sp = new Arma(img, Math.round(nw/2), Math.round(nh/2),spArray[0].width/2 - Math.round(nw/2)/2, Math.round(nw/2)/2, 0);
-				spArray[0].addWeapon(sp);
-				spArray[0].imageData = spArray[0].getImageData();
+				var sp = new Arma(img, Math.round(nw/2), Math.round(nh/2),spArray.sp.width/2 - Math.round(nw/2)/2, Math.round(nw/2)/2, 0);
+				spArray.sp.addWeapon(sp);
+				spArray.sp.imageData = spArray.sp.getImageData();
 				break;
 			case "life":
-				var dim = spArray.length;
+				var aux = spArray;
 
-				for (let i = 0; i < dim-1; i++)
+				while(aux!=null)
 				{
-					spArray[i].setLifeImg(img, Math.round(nw/2), Math.round(nh/2));
+					aux.sp.setLifeImg(img, Math.round(nw/2), Math.round(nh/2));
+					aux = aux.next;
 				}
 				nLoad++;
 				break;
 			case "lifeBar":
-				var dim = spArray.length;
+				var aux = spArray;
 
-				for (let i = 0; i < dim-1; i++)
+				while(aux!=null)
 				{
-					spArray[i].setLifeBarImg(img);
+					aux.sp.setLifeBarImg(img);
+					aux = aux.next;
 				}
 				nLoad++;
 				break;
 			case "bullet":
-				spArray[totLoad] = new Bullet(img, Math.round(nw/2), Math.round(nh/2), spArray[0].weapons[0]);
+				sp = new Bullet(img, Math.round(nw/2), Math.round(nh/2), spArray.sp.weapons[0]);
+				spArray.add(sp);
 				nLoad++;
 				break; 
 		}		
 
 		if (nLoad == totLoad)
 		{
-			var ev3 = new Event("initend");
-			ev3.spArray = spArray;
-			ctx.canvas.dispatchEvent(ev3);
+			var ev = new Event("initend");
+			ev.spArray = spArray;
+			ctx.canvas.dispatchEvent(ev);
 		}
 	}	
 }
@@ -222,11 +248,12 @@ function startAnim(ctx, spArray)
 //desenhar sprites
 function draw(ctx, spArray)
 {
-	var dim = spArray.length;
+	var aux = spArray;
 
-	for (let i = 0; i < dim; i++)
+	while(aux!=null)
 	{
-		spArray[i].draw(ctx);
+		aux.sp.draw(ctx);
+		aux = aux.next;
 	}
 }
 
@@ -234,14 +261,14 @@ function draw(ctx, spArray)
 //apagar sprites
 function clear(ctx, spArray)
 {
-	var dim = spArray.length;
+	var aux = spArray;
 
-	for (let i = 0; i < dim; i++)
+	while(aux!=null)
 	{
-		spArray[i].clear(ctx);
+		aux.sp.clear(ctx);
+		aux = aux.next;
 	}
 }
-
 
 
 function animLoop(ctx, spArray, startTime, time)
@@ -267,24 +294,25 @@ function render(ctx, spArray, reqID, dt)
 	ctx.clearRect(0, 0, cw, ch);
 
 	//animar sprites
-	var sp = spArray[0];
-	if(sp.intersectsPixelCheck(spArray[2])){
-		sp.impact = 121;
-		sp.impactDirection = spArray[2].direction;
-		sp.life-=10;
-		if(sp.life<=0){
-			sp.life=0;
-			window.cancelAnimationFrame(reqID);
-		}
-	}
+	var aux = spArray;
 
-	var dim = spArray.length;
-
-	for (let i = 0; i < dim; i++)
+	while(aux!=null)
 	{
-		spArray[i].rotate();
-		spArray[i].move(cw, ch);
+		aux.sp.rotate();
+		aux.sp.move(cw, ch);
+		var aux2= aux.next;
+		while(aux2!=null){
+
+			if(aux.sp.react(aux2.sp))
+				aux2.sp.react(aux.sp)
+			aux2 = aux2.next;
+
+			if(aux.sp==null)
+				break;
+		}
+		aux = aux.next;
 	}
+
 	draw(ctx, spArray);
 	if(ctx.pause)
 		window.cancelAnimationFrame(reqID);

@@ -15,7 +15,9 @@ class SpriteImage
 		//this.imageData = this.getImageData();
 		this.impact = -1;
 		this.impactDirection=0;
+		this.listPointer=null;
 	}
+
 	setLifeImg(img, Lw, Lh){
 	}
 	setLifeBarImg(img){
@@ -26,8 +28,10 @@ class SpriteImage
 	}
 	react(){
 	}
+	drawLife(ctx){
+	}
+
 	draw(ctx){
-		
 		ctx.save();
 		if(this.impact>0){
 			ctx.globalAlpha = (121-3*this.impact/4)/121;
@@ -38,8 +42,7 @@ class SpriteImage
         ctx.drawImage(this.img, 0, 0, this.width, this.height);
         ctx.restore();
 	}
-	drawLife(ctx){
-	}
+
 	getImageData(){
 		this.ctx.clearRect(0, 0, this.width, this.height);
 		this.ctx.save();
@@ -90,6 +93,15 @@ class SpriteImage
 			return false;
 		}
 	}
+
+	remove(){
+		var ptr = this.listPointer;
+		if(ptr.ant!=null)
+			ptr.ant.next = ptr.next;
+		if(ptr.next!=null)
+			ptr.next.ant = ptr.ant;
+		ptr.sp=null;
+	}
 }
 
 class Entidade extends SpriteImage
@@ -104,20 +116,52 @@ class Entidade extends SpriteImage
 		this.Lw = 0;
 		this.Lh = 0;
 	}
+
 	setLifeImg(img, Lw, Lh){
 		this.lifeImg = img;
 		this.Lw = Lw;
 		this.Lh = Lh;
 	}
+
 	setLifeBarImg(img){
 		this.lifeBarImg = img;
 	}
+
 	drawlife(ctx){
 		var x = this.x + (this.width-this.Lw)/2;
 		var y = this.y + this.height;
 		ctx.drawImage(this.lifeBarImg, x, y, this.Lw, this.Lh);
 		ctx.drawImage(this.lifeImg, x, y, this.Lw * this.life / this.InitLife, this.Lh);
 	}
+
+	impactMove(cw, ch){
+		if(this.impact>0){
+			var change1 = false;
+			var change2 = false
+			this.impact-= 5;
+			this.x += (Math.cos(this.impactDirection) * (this.impact/10));
+			if (cw < this.x + this.width){
+				this.x = cw - this.width;
+				change1 = true;
+			}
+			if (0 > this.x){
+				this.x = 0;
+				 change1 = true;
+			}
+			this.y += (Math.sin(this.impactDirection) * (this.impact/10));
+			if (ch < this.y + this.height){
+				this.y = ch - this.height;
+				change2 = true;
+			}
+			if (0 > this.y){
+				this.y = 0;
+				change2 = true;
+			}
+			if(change1 && change2)
+				this.impact =0;
+		}
+	}
+
 }
 
 class Nave extends Entidade
@@ -171,31 +215,9 @@ class Nave extends Entidade
 					this.y += this.speed;		
 			}
 		}
-		if(this.impact>0){
-			var change1 = false;
-			var change2 = false
-			this.impact-= 5;
-			this.x += (Math.cos(this.impactDirection) * (this.impact/10));
-			if (cw < this.x + this.width){
-				this.x = cw - this.width;
-				change1 = true;
-			}
-			if (0 > this.x){
-				this.x = 0;
-				 change1 = true;
-			}
-			this.y += (Math.sin(this.impactDirection) * (this.impact/10));
-			if (ch < this.y + this.height){
-				this.y = ch - this.height;
-				change2 = true;
-			}
-			if (0 > this.y){
-				this.y = 0;
-				change2 = true;
-			}
-			if(change1 && change2)
-				this.impact =0;
-		}
+		
+		this.impactMove(cw, ch);
+
 		this.xc=this.x + Math.round(this.width / 2);
 		this.yc=this.y + Math.round(this.height / 2);
 	}
@@ -216,7 +238,7 @@ class Nave extends Entidade
 	}
 
 	react(objeto){
-
+		return true;
 	}
 
 	addWeapon(weapon){
@@ -286,36 +308,27 @@ class Bullet extends SpriteImage
 		console.log(img);
 		var x = weapon.nave.xc-w/2 + (weapon.nave.height-50)*Math.cos(weapon.nave.direction+weapon.direction - Math.PI / 2);
 		var y = weapon.nave.yc + (weapon.nave.height-50)*Math.sin(weapon.nave.direction+weapon.direction - Math.PI / 2);
-		super(img, w, h, x, y, weapon.nave.direction+weapon.direction / 2, null)
+		super(img, w, h, x, y, weapon.nave.direction + weapon.direction -  Math.PI / 2, null)
 		this.weapon = weapon;
 		this.damage = weapon.damage;
 		this.speed = weapon.speed;
 		this.distance = weapon.distance;
-		//this.imageData = this.getImageData();
+		this.imageData = this.getImageData();
 	}
+
 	move(cw, ch){
-		this.x = this.x + (Math.cos(this.direction- Math.PI / 2) * this.speed);
-		this.y = this.y + (Math.sin(this.direction-  Math.PI / 2) * this.speed);
+		this.x = this.x + (Math.cos(this.direction) * this.speed);
+		this.y = this.y + (Math.sin(this.direction) * this.speed);
 		this.distance-=this.speed;
 		if(this.distance<0){
 			this.distance = this.weapon.distance;
-			this.x = this.weapon.nave.xc-this.width/2 + (this.weapon.nave.height-50)*Math.cos(this.weapon.nave.direction+this.weapon.direction - Math.PI / 2);
-			this.y = this.weapon.nave.yc + (this.weapon.nave.height-50)*Math.sin(this.weapon.nave.direction+this.weapon.direction - Math.PI / 2);
-			this.direction = this.weapon.nave.direction+this.weapon.direction;
-			//this.imageData = this.getImageData();
+			this.direction = this.weapon.nave.direction+this.weapon.direction -  Math.PI / 2;
+			this.x = this.weapon.nave.xc-this.width/2 + (this.weapon.nave.height-50)*Math.cos(this.direction);
+			this.y = this.weapon.nave.yc-this.height/2 + (this.weapon.nave.height-50)*Math.sin(this.direction);
+			this.imageData = this.getImageData();
 		}
 	}
-	draw(ctx){
-		ctx.save();
-		//if(this.impact>0){
-			//ctx.globalAlpha = (121-3*this.impact/4)/121;
-		//}
-		ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(this.direction);
-        ctx.translate(-this.width / 2, -this.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-	}
+
 	getImageData(){
 		var canvas = document.createElement('canvas');
 		canvas.width = this.width;
@@ -329,22 +342,45 @@ class Bullet extends SpriteImage
         ctx.drawImage(this.img, 0, 0, this.width, this.height);
 		return ctx.getImageData(0, 0, this.width, this.height);
 	}
+
+	react(sp){
+		if(sp!=this.weapon.nave){
+			if(this.intersectsPixelCheck(sp)){
+				sp.impact = 121;
+				sp.life -= this.weapon.damage;
+				if(sp.life<0)
+					sp.remove();
+				sp.impactDirection = this.direction;
+				this.distance = this.weapon.distance;
+				this.direction = this.weapon.nave.direction+this.weapon.direction -  Math.PI / 2;
+				this.x = this.weapon.nave.xc-this.width/2 + (this.weapon.nave.height-50)*Math.cos(this.direction);
+				this.y = this.weapon.nave.yc-this.height/2 + (this.weapon.nave.height-50)*Math.sin(this.direction);
+				this.imageData = this.getImageData();
+			}
+		}
+		return false;
+	}
 }
 
 class Inimigo extends Entidade
 {
-	constructor(img, w, h, x, y, direction, ctx, life, speed, alvo, damage){
-		direction = Math.atan2(alvo.yc - (y + h/2), alvo.xc - (x + w/2));
+	constructor(img, w, h, x, y, ctx, life, speed, alvo, damage){
+		var direction = Math.atan2(alvo.yc - (y + h/2), alvo.xc - (x + w/2));
 		super(img, w, h, x, y, direction, ctx, life, speed);
 		this.alvo = alvo;
 		this.damage = damage;
 	}
+
 	move(cw, ch){
 		this.x = this.x + (Math.cos(this.direction) * this.speed);
 		this.y = this.y + (Math.sin(this.direction) * this.speed);
+		
+		this.impactMove(cw, ch);
+		
 		this.xc=this.x + this.width / 2;
 		this.yc=this.y + this.height / 2;
 	}
+
 	rotate(){
 		var alvo =  this.alvo;
 		if( (alvo.up && !alvo.down) || (alvo.down && !alvo.up) || (alvo.left && !alvo.right) || (alvo.right && !alvo.left) || alvo.impact>=0){
@@ -352,30 +388,21 @@ class Inimigo extends Entidade
 			this.imageData = this.getImageData();
 		}
 	}
+
 	react(objeto){
 		if(objeto = this.alvo){
-
-			return true
+			if(this.intersectsPixelCheck(objeto)){
+				objeto.impact = 121;
+				objeto.impactDirection = this.direction;
+				objeto.life-=10;
+			}
+			return false
 		}
+		// ao retornar true obejeto tem que usar react() sobre this
+		return true
 	}
 	draw(ctx){
-		ctx.save();
-		ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(this.direction + Math.PI / 2);
-        ctx.translate(-this.width / 2, -this.height / 2);
-        ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        ctx.restore();
-        this.drawlife(ctx);
+		super.draw(ctx);
+		this.drawlife(ctx);
 	}
-	getImageData(){
-		this.ctx.clearRect(0, 0, this.width, this.height);
-		this.ctx.save();
-		this.ctx.translate(this.width / 2, this.height / 2);
-        this.ctx.rotate(this.direction + Math.PI / 2);
-        this.ctx.translate(-this.width / 2, -this.height / 2);
-        this.ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        this.ctx.restore();
-		return this.ctx.getImageData(0, 0, this.width, this.height);
-	}
-
 }
