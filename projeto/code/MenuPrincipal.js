@@ -8,18 +8,22 @@
 
 function main()
 {
+    var audio = document.getElementById('hover');
+
 	var source;
 	function messageHandler(ev){
-		if(ev.data=="hello frame"){
-			source = ev.source;
-    	}
+		source = ev.source;
+        audio.volume = ev.data[1]; 
 	}
+    window.addEventListener("message", messageHandler);
+
 	var Cbtn = document.getElementById("campanha");
     var Sbtn = document.getElementById("sobrevivencia");
     var Rbtn = document.getElementById("ranking");
     var Obtn = document.getElementById("opcoes");
     var Abtn = document.getElementById("ajuda");
     var Qbtn = document.getElementById("sair");
+    var Bbtn = document.getElementById("voltar");
     function buttonClickHandler(ev){
     	var btn = ev.currentTarget;
         switch (btn){
@@ -27,7 +31,7 @@ function main()
     		source.postMessage('../projeto/html/Campanha.html', '*');
             break;
         case Sbtn:
-            source.postMessage('../projeto/html/Sobrevivencia.html', '*');
+            source.postMessage('../projeto/html/MenuCustomizacao.html', '*');
             break;
         case Rbtn:
             source.postMessage('../projeto/html/Ranking.html', '*');
@@ -36,7 +40,10 @@ function main()
             source.postMessage('../projeto/html/Opcoes.html', '*');
             break;
         case Abtn:
-            source.postMessage('../projeto/html/Ajuta.html', '*');
+            source.postMessage('../projeto/html/Ajuda.html', '*');
+            break;
+        case Bbtn:
+            source.postMessage('../projeto/html/MenuInicial.html', '*');
             break;
         case Qbtn:
             source.postMessage('Sair', '*');
@@ -49,4 +56,18 @@ function main()
     Obtn.addEventListener("click", buttonClickHandler);
     Abtn.addEventListener("click", buttonClickHandler);
     Qbtn.addEventListener("click", buttonClickHandler);
+    Bbtn.addEventListener("click", buttonClickHandler);
+
+    function hoverHandler(ev){
+        audio.currentTime = 0
+        audio.play();
+    }
+
+    Cbtn.addEventListener("mouseover", hoverHandler);
+    Sbtn.addEventListener("mouseover", hoverHandler);
+    Rbtn.addEventListener("mouseover", hoverHandler);
+    Obtn.addEventListener("mouseover", hoverHandler);
+    Abtn.addEventListener("mouseover", hoverHandler);
+    Qbtn.addEventListener("mouseover", hoverHandler);
+    Bbtn.addEventListener("mouseover", hoverHandler);
 }

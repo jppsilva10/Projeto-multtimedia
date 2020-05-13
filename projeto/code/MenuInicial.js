@@ -8,11 +8,12 @@
 
 function main()
 {
+    var audio = document.getElementById('hover');
+
 	var source;
 	function messageHandler(ev){
-		if(ev.data=="hello frame"){
-			source = ev.source;
-    	}
+		source = ev.source;
+        audio.volume = ev.data[1];
 	}
     window.addEventListener("message", messageHandler);
 	var Nbtn = document.getElementById("newGame");
@@ -22,8 +23,16 @@ function main()
     	if(btn==Nbtn)
     		source.postMessage('../projeto/html/MenuPrincipal.html', '*');
     	else
-    		source.postMessage('../projeto/html/LoadGame.html', '*');
+    		source.postMessage('../projeto/html/MenuPrincipal.html', '*');
     }
     Nbtn.addEventListener("click", buttonClickHandler);
     Lbtn.addEventListener("click", buttonClickHandler);
+
+    function hoverHandler(ev){
+        audio.currentTime = 0;
+        audio.play();
+    }
+
+    Nbtn.addEventListener("mouseover", hoverHandler);
+    Lbtn.addEventListener("mouseover", hoverHandler);
 }

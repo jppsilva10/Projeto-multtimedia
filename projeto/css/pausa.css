@@ -1,11 +1,4 @@
 
-html, body, div {
-    background:none transparent;
-    /*pointer-events:auto;*/
-    pointer-events: auto;
-    allowTransparency = 'true'
-}
-
 body{
     position: absolute;
     left: 0px;

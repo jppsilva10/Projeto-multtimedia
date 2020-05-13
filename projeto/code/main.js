@@ -8,6 +8,17 @@
 
 function main()
 {
+
+	var canvas = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");
+	canvas.addEventListener("initend", initEndHandler);
+
+	var spArray;
+	var generator;
+	ctx.pause = false;
+	var repeat = false;
+
+	var source;
 	// retomar o foco dos eventos à janela do jogo
 	function messageHandler(ev){
 		if(ev.data=="continue"){
@@ -17,6 +28,19 @@ function main()
 			repeat= true; 
 			window.focus()
 		}
+		else if (ev.data != null){
+			//audio.volume = ev.data[1];
+			source = ev.source;
+			var weapons = new Array(4);
+			for(let i = 2; i<ev.data.length;i++){
+				weapons[i-2] = ev.data[i];
+			}
+			ctx.weapons = weapons;
+			console.log(ctx.weapons[0]);
+			if(ctx.weapons[0]!=null)
+				init(ctx);  //carregar todos os componentes
+
+		}
 	}
 
 	// fornecer a sorce da main
@@ -25,21 +49,26 @@ function main()
 	pause.contentWindow.postMessage('hello frame', '*');
 	pause.style.height = 0;
 
-	var canvas = document.getElementById("canvas");
-	var ctx = canvas.getContext("2d");
-	canvas.addEventListener("initend", initEndHandler);
-
-	var spArray;
-	var imgArray;
-	ctx.pause = false;
-	var repeat = false;
 	
-	init(ctx);  //carregar todos os componentes
+
+	// cronometro
+	var time = 0;
+	//setInterval(update, 100);
+	function update(){
+		time+=1;
+		generator.generate(time, ctx);
+		for(let i = 0; i<4; i++){
+			spArray.sp.weapons[i].shoot(time);
+		}
+	}
+
+
 
 	//controlar a movimentação da nave
 	function initEndHandler(ev)
 	{
 		spArray = ev.spArray;
+		generator = ev.generator;
 		var sp = spArray.sp;
 		function move(ev){
 			switch(ev.keyCode){
@@ -109,6 +138,7 @@ function main()
 		window.addEventListener("keydown", move);
 		window.addEventListener("keyup", stop);
 
+		setInterval(update, 100);
 		//iniciar a animação
 		startAnim(ctx, spArray);
 	}
@@ -119,8 +149,10 @@ function main()
 function init(ctx)
 {
 	var nLoad = 0;
-	var totLoad = 3;
+	var totLoad = 16;
 	var spArray = new ArrayList();
+	var generator= new Gerador(spArray);
+	generator.images = new Array(4);
 
 	//carregar imagens e criar sprites
 	var img1 = new Image();
@@ -135,23 +167,61 @@ function init(ctx)
 
 	function loadEnimies(ev){
 
-		var arma = new Image();
-		arma.addEventListener("load", imgLoadedHandler);
-		arma.id="arma";
-		arma.src = "resources/arma1.png";
+		var arma1 = new Image();
+		arma1.addEventListener("load", imgLoadedHandler);
+		arma1.id="arma";
+		arma1.index=1;
+		arma1.src = ctx.weapons[0];
+		var arma2 = new Image();
+		arma2.addEventListener("load", imgLoadedHandler);
+		arma2.id="arma";
+		arma2.index=2;
+		arma2.src = ctx.weapons[1];
+		var arma3 = new Image();
+		arma3.addEventListener("load", imgLoadedHandler);
+		arma3.id="arma";
+		arma3.index=3;
+		arma3.src = ctx.weapons[2];
+		var arma4 = new Image();
+		arma4.addEventListener("load", imgLoadedHandler);
+		arma4.id="arma";
+		arma4.index=4;
+		arma4.src = ctx.weapons[3];
+		ctx.weapons = null;
 
 		var enimigos = new Image();
 		enimigos.addEventListener("load", imgLoadedHandler);
 		enimigos.id="inimigo";
 		enimigos.src = "resources/inimigo.png";
+
+		var explosao = new Image();
+		explosao.addEventListener("load", imgLoadedHandler);
+		explosao.id="explosao";
+		explosao.index=0;
+		explosao.src = "resources/explosao0.png";
+
+		var explosao2 = new Image();
+		explosao2.addEventListener("load", imgLoadedHandler);
+		explosao2.id="explosao";
+		explosao2.index=1;
+		explosao2.src = "resources/explosao1.png";
+
+		var explosao3 = new Image();
+		explosao3.addEventListener("load", imgLoadedHandler);
+		explosao3.id="explosao";
+		explosao3.index=2;
+		explosao3.src = "resources/explosao2.png";
+
+		var explosao4 = new Image();
+		explosao4.addEventListener("load", imgLoadedHandler);
+		explosao4.id="explosao";
+		explosao4.index=3;
+		explosao4.src = "resources/explosao3.png";
+
+
 	}
 
 	function loadLife(ev){
-
-		var bullet = new Image();
-		bullet.addEventListener("load", imgLoadedHandler);
-		bullet.id="bullet";
-		bullet.src = "resources/tiro1.png";
 
 		var life = new Image();
 		life.addEventListener("load", imgLoadedHandler);
@@ -181,24 +251,56 @@ function init(ctx)
 			case "nave":
 				var sp = new Nave(img, Math.round(nw/4), Math.round(nh/4), Math.round(ctx.canvas.width/2), Math.round(ctx.canvas.height/2), 0, context, 100, 3);
 				spArray.sp = sp;
+				sp.listPointer = spArray;
 				var ev = new Event("loadEnimies");
 				ctx.canvas.dispatchEvent(ev);
 				nLoad++;
 				break;
+
 			case "inimigo":
-				for(; nLoad<totLoad; nLoad++){
-					var sp = new Inimigo(img, Math.round(nw/4), Math.round(nh/4), 0, 0, context, 100, nLoad, spArray.sp, 10);
-					sp.imageData=sp.getImageData();
-					spArray.add(sp);
-				}
-				nLoad-=3;
+
+				generator.setImg(img);
+				nLoad ++;
 				var ev = new Event("loadLife");
 				ctx.canvas.dispatchEvent(ev);
 				break;
+
 			case "arma":
-				var sp = new Arma(img, Math.round(nw/2), Math.round(nh/2),spArray.sp.width/2 - Math.round(nw/2)/2, Math.round(nw/2)/2, 0);
+				var sp
+				var direction = img.index * Math.PI/2;
+				switch(img.src[img.src.length-5]){
+					case "0":
+    					sp = new Arma(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "1":
+    					sp = new Arma1(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "2":
+    					sp = new Arma2(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "3":
+    					sp = new Arma3(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "4":
+    					sp = new Arma4(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "5":
+    					sp = new Arma5(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "6":
+    					sp = new Arma6(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+            		case "7":
+    					sp = new Arma7(img, Math.round(nw/4), Math.round(nh/4), spArray.sp.width/2 - Math.round(nw/4)/2, Math.round(nw/4)/2, direction);
+            		break;
+				}
 				spArray.sp.addWeapon(sp);
-				spArray.sp.imageData = spArray.sp.getImageData();
+
+				var img2 = new Image();
+				img2.addEventListener("load", imgLoadedHandler);
+				img2.src = "../projeto/resources/tiro" + img.src[img.src.length-5] + ".png"; 
+				img2.id = "tiro";
+				nLoad ++;
 				break;
 			case "life":
 				var aux = spArray;
@@ -208,6 +310,7 @@ function init(ctx)
 					aux.sp.setLifeImg(img, Math.round(nw/2), Math.round(nh/2));
 					aux = aux.next;
 				}
+				generator.setLifeImg(img, Math.round(nw/2), Math.round(nh/2));
 				nLoad++;
 				break;
 			case "lifeBar":
@@ -218,19 +321,32 @@ function init(ctx)
 					aux.sp.setLifeBarImg(img);
 					aux = aux.next;
 				}
+				generator.setLifeBarImg(img);
 				nLoad++;
 				break;
-			case "bullet":
-				sp = new Bullet(img, Math.round(nw/2), Math.round(nh/2), spArray.sp.weapons[0]);
-				spArray.add(sp);
+			case "tiro":
+				var nave = spArray.sp;
+				var i = 0;
+				while(nave.weapons[i].img.src[nave.weapons[i].img.src.length-5]!=img.src[img.src.length-5]){
+					i++;
+				}
+				nave.weapons[i].addBullet(img, Math.round(nw/2), Math.round(nh/2));
+
 				nLoad++;
-				break; 
+				break;
+			case "explosao":
+				generator.images[img.index]=img;
+				console.log(img);
+				nLoad++;
+				break;
 		}		
 
 		if (nLoad == totLoad)
 		{
+			spArray.sp.imageData = spArray.sp.getImageData();
 			var ev = new Event("initend");
 			ev.spArray = spArray;
+			ev.generator = generator;
 			ctx.canvas.dispatchEvent(ev);
 		}
 	}	
@@ -257,20 +373,6 @@ function draw(ctx, spArray)
 	}
 }
 
-
-//apagar sprites
-function clear(ctx, spArray)
-{
-	var aux = spArray;
-
-	while(aux!=null)
-	{
-		aux.sp.clear(ctx);
-		aux = aux.next;
-	}
-}
-
-
 function animLoop(ctx, spArray, startTime, time)
 {	
 	var al = function(time)
@@ -293,7 +395,6 @@ function render(ctx, spArray, reqID, dt)
 	//apagar canvas
 	ctx.clearRect(0, 0, cw, ch);
 
-	//animar sprites
 	var aux = spArray;
 
 	while(aux!=null)

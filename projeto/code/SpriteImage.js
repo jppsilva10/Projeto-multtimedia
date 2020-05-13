@@ -100,14 +100,19 @@ class SpriteImage
 			ptr.ant.next = ptr.next;
 		if(ptr.next!=null)
 			ptr.next.ant = ptr.ant;
-		ptr.sp=null;
+		//ptr.sp=null;
 	}
 }
+
+
+
+
+
 
 class Entidade extends SpriteImage
 {
 	constructor(img, w, h, x, y, direction, ctx, life, speed){
-		super(img, w, h, x, y, direction, ctx)
+		super(img, w, h, x, y, direction, ctx);
 		this.life = life;
 		this.InitLife = life;
 		this.speed = speed;
@@ -174,7 +179,7 @@ class Nave extends Entidade
 		this.right= false;
 		this.Rleft= false;
 		this.Rright= false;
-		this.weapons =new Array(1);
+		this.weapons =new Array(4);
 	}
 
 	move(cw, ch){
@@ -261,7 +266,7 @@ class Nave extends Entidade
         ctx.drawImage(this.img, 0, 0, this.width, this.height);
         for(let i=0; i<this.weapons.length; i++){
         	ctx.translate(this.width / 2, this.height / 2);
-        	ctx.rotate(this.weapons[i].direction);
+        	ctx.rotate(Math.PI*90/180);
         	ctx.translate(-this.width / 2, -this.height / 2);
         	ctx.drawImage(this.weapons[i].img, this.width/2 - this.weapons[i].width/2, 0, this.weapons[i].width, this.weapons[i].height);
         }
@@ -286,29 +291,162 @@ class Nave extends Entidade
 	}
 }
 
+
+
+
+
+
 class Arma extends SpriteImage
 {
 	constructor(img, w, h, x, y, direction){
 		super(img, w, h, x, y, direction, null);
-		this.damage = 10;
+		this.damage = 20;
 		this.speed = 7;
 		this.distance = 500;
 		this.nave=null;
+		this.timer = 1;
 	}
 	draw(ctx){
 	}
 	getImageData(){
 		return null;
 	}
+	shoot(time){
+		if(time%(10*this.timer)==0){
+			var x = this.nave.xc-this.Bw/2 + (this.nave.height-50)*Math.cos(this.nave.direction+this.direction - Math.PI / 2);
+			var y = this.nave.yc-this.Bh/2 + (this.nave.height-50)*Math.sin(this.nave.direction+this.direction - Math.PI / 2);
+			var direction = this.nave.direction + this.direction -  Math.PI / 2;
+			var bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+		}
+	}
+	addBullet(Img, w, h){
+		this.Bimg = Img;
+		this.Bw = w;
+		this.Bh = h;
+	}
+}
+
+class Arma1 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 10;
+		this.speed = 8;
+		this.distance = 250;
+		this.nave=null;
+		this.timer = 0.2;
+	}
+}
+
+class Arma2 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 80;
+		this.speed = 6;
+		this.distance = 270;
+		this.nave=null;
+		this.timer = 2.2;
+	}
+}
+
+class Arma3 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 1000;
+		this.speed = 9;
+		this.distance = 900;
+		this.nave=null;
+		this.timer = 2.7;
+	}
+}
+
+class Arma4 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 45;
+		this.speed = 6;
+		this.distance = 500;
+		this.nave=null;
+		this.timer = 2;
+	}
+	shoot(time){
+		if(time%(10*this.timer)==0 || time%(10*this.timer)==2 || time%(10*this.timer)==4){	
+			console.log(time);
+			var x = this.nave.xc-this.Bw/2 + (this.nave.height-50)*Math.cos(this.nave.direction+this.direction - Math.PI / 2);
+			var y = this.nave.yc-this.Bh/2 + (this.nave.height-50)*Math.sin(this.nave.direction+this.direction - Math.PI / 2);
+			var direction = this.nave.direction + this.direction -  Math.PI / 2;
+			var bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+		}
+	}
+}
+
+class Arma5 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 50;
+		this.speed = 6.5;
+		this.distance = 120;
+		this.nave=null;
+		this.timer = 1.5;
+	}
+	shoot(time){
+		if(time%(10*this.timer)==0){	
+			console.log(time);
+			var x = this.nave.xc-this.Bw/2 + (this.nave.height-50)*Math.cos(this.nave.direction+this.direction - Math.PI / 2);
+			var y = this.nave.yc + (this.nave.height-50)*Math.sin(this.nave.direction+this.direction - Math.PI / 2);
+			var direction = this.nave.direction + this.direction -  Math.PI / 2;
+			var bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+			direction = this.nave.direction + this.direction -  Math.PI / 2 - Math.PI / 10;
+			bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+			direction = this.nave.direction + this.direction -  Math.PI / 2 - Math.PI / 5;
+			bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+			direction = this.nave.direction + this.direction -  Math.PI / 2 + Math.PI / 10;
+			bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+			direction = this.nave.direction + this.direction -  Math.PI / 2 + Math.PI / 5;
+			bullet = new Bullet(this.Bimg , this.Bw, this.Bh, x, y, direction, this);
+			this.nave.listPointer.add(bullet);
+		}
+	}
+}
+
+class Arma6 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 20;
+		this.speed = 1.8;
+		this.distance = 620;
+		this.nave=null;
+		this.timer = 1.7;
+	}
+}
+
+class Arma7 extends Arma
+{
+	constructor(img, w, h, x, y, direction){
+		super(img, w, h, x, y, direction);
+		this.damage = 85;
+		this.speed = 4.5;
+		this.distance = 900;
+		this.nave=null;
+		this.timer = 2;
+	}
 }
 
 class Bullet extends SpriteImage
 {
-	constructor(img, w, h, weapon){
-		console.log(img);
-		var x = weapon.nave.xc-w/2 + (weapon.nave.height-50)*Math.cos(weapon.nave.direction+weapon.direction - Math.PI / 2);
-		var y = weapon.nave.yc + (weapon.nave.height-50)*Math.sin(weapon.nave.direction+weapon.direction - Math.PI / 2);
-		super(img, w, h, x, y, weapon.nave.direction + weapon.direction -  Math.PI / 2, null)
+	constructor(img, w, h, x, y, direction, weapon){
+		super(img, w, h, x, y, direction, null)
 		this.weapon = weapon;
 		this.damage = weapon.damage;
 		this.speed = weapon.speed;
@@ -321,11 +459,7 @@ class Bullet extends SpriteImage
 		this.y = this.y + (Math.sin(this.direction) * this.speed);
 		this.distance-=this.speed;
 		if(this.distance<0){
-			this.distance = this.weapon.distance;
-			this.direction = this.weapon.nave.direction+this.weapon.direction -  Math.PI / 2;
-			this.x = this.weapon.nave.xc-this.width/2 + (this.weapon.nave.height-50)*Math.cos(this.direction);
-			this.y = this.weapon.nave.yc-this.height/2 + (this.weapon.nave.height-50)*Math.sin(this.direction);
-			this.imageData = this.getImageData();
+			this.remove();
 		}
 	}
 
@@ -335,7 +469,7 @@ class Bullet extends SpriteImage
 		canvas.height = this.height;
 		var ctx = canvas.getContext("2d");
 
-		ctx.clearRect(0, 0, this.width, this.height);
+		//ctx.clearRect(0, 0, this.width, this.height);
 		ctx.translate(this.width / 2, this.height / 2);
         ctx.rotate(this.direction);
         ctx.translate(-this.width / 2, -this.height / 2);
@@ -345,22 +479,21 @@ class Bullet extends SpriteImage
 
 	react(sp){
 		if(sp!=this.weapon.nave){
-			if(this.intersectsPixelCheck(sp)){
-				sp.impact = 121;
-				sp.life -= this.weapon.damage;
-				if(sp.life<0)
-					sp.remove();
-				sp.impactDirection = this.direction;
-				this.distance = this.weapon.distance;
-				this.direction = this.weapon.nave.direction+this.weapon.direction -  Math.PI / 2;
-				this.x = this.weapon.nave.xc-this.width/2 + (this.weapon.nave.height-50)*Math.cos(this.direction);
-				this.y = this.weapon.nave.yc-this.height/2 + (this.weapon.nave.height-50)*Math.sin(this.direction);
-				this.imageData = this.getImageData();
+			if(sp.ctx!=null){
+				if(this.intersectsPixelCheck(sp)){
+					sp.impact = 121;
+					sp.life -= this.weapon.damage;
+					sp.impactDirection = this.direction;
+					if(sp.life<0)
+						sp.remove();
+					this.remove();
+				}
 			}
 		}
 		return false;
 	}
 }
+
 
 class Inimigo extends Entidade
 {
@@ -404,5 +537,128 @@ class Inimigo extends Entidade
 	draw(ctx){
 		super.draw(ctx);
 		this.drawlife(ctx);
+	}
+	remove(){
+		var explosion = new Explosion(this.images, this.x, this.y, this.alvo);
+		console.log(explosion);
+		this.listPointer.ant.add(explosion);
+		var ptr = this.listPointer;
+		if(ptr.ant!=null)
+			ptr.ant.next = ptr.next;
+		if(ptr.next!=null)
+			ptr.next.ant = ptr.ant;
+		//ptr.sp=null;
+	}
+}
+
+
+class Gerador
+{
+	constructor(spArray){
+		this.spArray = spArray;
+		this.timer = 3;
+	}
+
+	setLifeImg(img, Lw, Lh){
+		this.lifeImg = img;
+		this.Lw = Lw;
+		this.Lh = Lh;
+	}
+
+	setLifeBarImg(img){
+		this.lifeBarImg = img;
+	}
+
+	setImg(img){
+		this.img1 = img;
+	}
+
+	generate(time, ctx){
+		if(time % (10*this.timer)==0){
+			var nw = this.img1.naturalWidth;
+			var nh = this.img1.naturalHeight;
+			var canvas = document.createElement('canvas');
+			canvas.width = Math.round(nw/4);
+			canvas.height = Math.round(nh/4);
+			var context = canvas.getContext("2d");
+
+			// calcular posição
+			var x = Math.random() * (ctx.canvas.width);
+			var y = Math.random() * (ctx.canvas.height);
+
+			var r = Math.random();
+			if(r<0.5){
+				y = Math.round(y/ctx.canvas.height)*ctx.canvas.height;
+			}
+			else{
+				x = Math.round(x/ctx.canvas.width)*ctx.canvas.width;
+			}
+
+			var sp = new Inimigo(this.img1, Math.round(nw/4), Math.round(nh/4), x, y, context, 100, 3, this.spArray.sp, 10);
+			sp.images = this.images;
+			sp.imageData=sp.getImageData();
+			sp.setLifeImg(this.lifeImg, this.Lw, this.Lh);
+			sp.setLifeBarImg(this.lifeBarImg);
+			this.spArray.add(sp);
+		}
+	}
+}
+
+class Explosion extends SpriteImage
+{
+	constructor(images,x, y, nave){
+		super(null, 10, 10, x, y, 0, null);
+		this.images = images;
+		this.img = images[0]
+		this.imageData = this.getImageData();
+		this.index = 0
+		this.alvo = nave
+		this.opacity = 100;
+	}
+	react(objeto){
+		if(objeto = this.alvo){
+			if(this.intersectsPixelCheck(objeto)){
+				objeto.impact = 200;
+				objeto.impactDirection = Math.atan2(this.alvo.yc - this.yc, this.alvo.xc - this.xc);
+				objeto.life-=35;
+			}
+		}
+		return false
+	}
+	draw(ctx){
+		ctx.save();
+
+			ctx.globalAlpha = (this.opacity/100);
+			this.imageData = this.getImageData();
+
+			this.opacity -= 2;
+			if((this.opacity)%20==0 && this.index<3) {
+
+				this.index++;
+				console.log(this.index);
+				this.img = this.images[this.index];
+			}
+
+		ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+		ctx.rotate(this.direction);
+		ctx.translate(-this.width / 2, -this.height / 2);
+		ctx.drawImage(this.img, 0, 0, this.width, this.height);
+		ctx.restore();
+		if(this.opacity<=0){
+			this.remove();
+		}
+		this.width += 10;
+		this.height+= 10;
+	}
+
+	getImageData(){
+		var canvas = document.createElement('canvas');
+		canvas.width = this.width;
+		canvas.height = this.height;
+		var ctx = canvas.getContext("2d");
+
+		ctx.drawImage(this.img, 0, 0, this.width, this.height);
+		ctx.restore();
+		return ctx.getImageData(0, 0, this.width, this.height);
 	}
 }
